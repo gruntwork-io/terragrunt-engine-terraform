@@ -121,9 +121,8 @@ func TestTerraformEngine_Init(t *testing.T) {
 
 	err := engine.Init(&tgengine.InitRequest{}, mockStream)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(mockStream.Responses))
-	assert.Equal(t, "Terraform Initialization started\n", mockStream.Responses[0].Stdout)
-	assert.Equal(t, "Terraform Initialization completed\n", mockStream.Responses[1].Stdout)
+	assert.Equal(t, 1, len(mockStream.Responses))
+	assert.Equal(t, "Terraform Initialization completed\n", mockStream.Responses[0].Stdout)
 }
 
 func TestTerraformEngine_Run(t *testing.T) {

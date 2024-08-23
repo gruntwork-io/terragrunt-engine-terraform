@@ -29,6 +29,11 @@ type TerraformEngine struct {
 
 func (c *TerraformEngine) Init(req *tgengine.InitRequest, stream tgengine.Engine_InitServer) error {
 	log.Info("Init Terraform engine")
+
+	err := stream.Send(&tgengine.InitResponse{Stdout: "Terraform Initialization completed\n", Stderr: "", ResultCode: 0})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -148,6 +153,11 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 
 func (c *TerraformEngine) Shutdown(req *tgengine.ShutdownRequest, stream tgengine.Engine_ShutdownServer) error {
 	log.Info("Shutdown Terraform engine")
+
+	err := stream.Send(&tgengine.ShutdownResponse{Stdout: "Terraform Shutdown completed\n", Stderr: "", ResultCode: 0})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
