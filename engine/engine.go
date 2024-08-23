@@ -20,7 +20,7 @@ import (
 
 const (
 	wgSize     = 2
-	IacCommand = "terraform"
+	iacCommand = "terraform"
 )
 
 type TerraformEngine struct {
@@ -39,7 +39,7 @@ func (c *TerraformEngine) Init(req *tgengine.InitRequest, stream tgengine.Engine
 
 func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_RunServer) error {
 	log.Infof("Run Terraform engine %v", req.WorkingDir)
-	cmd := exec.Command(IacCommand, req.Args...)
+	cmd := exec.Command(iacCommand, req.Args...)
 	cmd.Dir = req.WorkingDir
 	env := make([]string, 0, len(req.EnvVars))
 	for key, value := range req.EnvVars {
