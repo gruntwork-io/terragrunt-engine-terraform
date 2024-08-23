@@ -1,6 +1,6 @@
 # terragrunt-engine-terraform
 
-[Terragrunt](https://github.com/gruntwork-io/terragrunt) OpenTofu IAC engine implemented based on spec from [terragrunt-engine-go](https://github.com/gruntwork-io/terragrunt-engine-go)
+[Terragrunt](https://github.com/gruntwork-io/terragrunt) Terraform IAC engine implemented based on spec from [terragrunt-engine-go](https://github.com/gruntwork-io/terragrunt-engine-go)
 
 ## Overview
 
