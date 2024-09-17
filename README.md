@@ -24,7 +24,7 @@ engine {
   source  = "github.com/gruntwork-io/terragrunt-engine-terraform"
   // Specify a fixed version if you want to pin a specific engine version instead of always
   // using the latest version of the engine.
-  // version = "v0.0.6"
+  // version = "v0.0.2"
 }
 ```
 
