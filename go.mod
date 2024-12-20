@@ -1,6 +1,6 @@
 module github.com/gruntwork-io/terragrunt-engine-terraform
 
-go 1.21
+go 1.23
 
 require (
 	github.com/gruntwork-io/terragrunt-engine-go v0.0.3
