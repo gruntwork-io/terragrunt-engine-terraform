@@ -3,7 +3,7 @@ module github.com/gruntwork-io/terragrunt-engine-terraform
 go 1.23
 
 require (
-	github.com/gruntwork-io/terragrunt-engine-go v0.0.5
+	github.com/gruntwork-io/terragrunt-engine-go v0.0.6
 	github.com/hashicorp/go-plugin v1.6.2
 	github.com/kr/pty v1.1.8
 	github.com/sirupsen/logrus v1.9.3
@@ -24,9 +24,9 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241219192143-6b3ec007d9bb // indirect
-	google.golang.org/protobuf v1.36.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
+	golang.org/x/sys v0.29.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250106144421-5f5ef82da422 // indirect
+	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
