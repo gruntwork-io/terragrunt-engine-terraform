@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/creack/pty v1.1.24
-	github.com/gruntwork-io/terragrunt-engine-go v0.0.6
+	github.com/gruntwork-io/terragrunt-engine-go v0.0.7
 	github.com/hashicorp/go-plugin v1.6.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
