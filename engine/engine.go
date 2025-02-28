@@ -1,8 +1,10 @@
+// Package engine provides the implementation of Terragrunt IaC engine interface
 package engine
 
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -35,17 +37,20 @@ func (c *TerraformEngine) Init(req *tgengine.InitRequest, stream tgengine.Engine
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_RunServer) error {
-	log.Infof("Run Terraform engine %v", req.WorkingDir)
-	cmd := exec.Command(iacCommand, req.Args...)
-	cmd.Dir = req.WorkingDir
-	env := make([]string, 0, len(req.EnvVars))
-	for key, value := range req.EnvVars {
+	log.Infof("Run Terraform engine %v", req.GetWorkingDir())
+	cmd := exec.Command(iacCommand, req.GetArgs()...)
+	cmd.Dir = req.GetWorkingDir()
+
+	env := make([]string, 0, len(req.GetEnvVars()))
+	for key, value := range req.GetEnvVars() {
 		env = append(env, fmt.Sprintf("%s=%s", key, value))
 	}
+
 	cmd.Env = append(cmd.Env, env...)
 
 	stdoutPipe, err := cmd.StdoutPipe()
@@ -53,18 +58,20 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 		sendError(stream, err)
 		return err
 	}
+
 	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
 		sendError(stream, err)
 		return err
 	}
 
-	if req.AllocatePseudoTty {
+	if req.GetAllocatePseudoTty() {
 		ptmx, err := pty.Start(cmd)
 		if err != nil {
 			log.Errorf("Error allocating pseudo-TTY: %v", err)
 			return err
 		}
+
 		defer func() { _ = ptmx.Close() }()
 
 		go func() {
@@ -87,42 +94,58 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 
 	var wg sync.WaitGroup
 
-	// 2 streams to send stdout and stderr
 	wg.Add(wgSize)
 
-	// Stream stdout
 	go func() {
+		// Ensure this goroutine signals completion when it returns
 		defer wg.Done()
+
+		// Create a reader that translates data from stdoutPipe into UTF-8 runes
 		reader := transform.NewReader(stdoutPipe, unicode.UTF8.NewDecoder())
+		// Wrap the reader in a buffered reader for efficient reading
 		bufReader := bufio.NewReader(reader)
+
 		for {
+			// Read a single rune from the buffered reader
 			char, _, err := bufReader.ReadRune()
 			if err != nil {
-				if err != io.EOF {
+				// If there's an error and it's not EOF, log it
+				if !errors.Is(err, io.EOF) {
 					log.Errorf("Error reading stdout: %v", err)
 				}
+				// Exit the loop on EOF or any other error
 				break
 			}
+
+			// Stream the read character back to the client
 			if err = stream.Send(&tgengine.RunResponse{Stdout: string(char)}); err != nil {
+				// If streaming fails, log the error and exit
 				log.Errorf("Error sending stdout: %v", err)
 				return
 			}
 		}
 	}()
 
-	// Stream stderr
+	// Starts a goroutine that captures stderr output character by character,
+	// applying UTF-8 decoding, and streams each character to the client.
+	// Handles errors appropriately and signals completion via WaitGroup.
+	// Terminates on EOF or transmission errors.
 	go func() {
 		defer wg.Done()
+
 		reader := transform.NewReader(stderrPipe, unicode.UTF8.NewDecoder())
 		bufReader := bufio.NewReader(reader)
+
 		for {
 			char, _, err := bufReader.ReadRune()
 			if err != nil {
-				if err != io.EOF {
+				if !errors.Is(err, io.EOF) {
 					log.Errorf("Error reading stderr: %v", err)
 				}
+
 				break
 			}
+
 			if err = stream.Send(&tgengine.RunResponse{Stderr: string(char)}); err != nil {
 				log.Errorf("Error sending stderr: %v", err)
 				return
@@ -130,18 +153,22 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 		}
 	}()
 	wg.Wait()
-	err = cmd.Wait()
+
 	resultCode := 0
-	if err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
+
+	if err := cmd.Wait(); err != nil {
+		var exitError *exec.ExitError
+		if ok := errors.As(err, &exitError); ok {
 			resultCode = exitError.ExitCode()
 		} else {
 			resultCode = 1
 		}
 	}
+
 	if err := stream.Send(&tgengine.RunResponse{ResultCode: int32(resultCode)}); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -158,6 +185,7 @@ func (c *TerraformEngine) Shutdown(req *tgengine.ShutdownRequest, stream tgengin
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
