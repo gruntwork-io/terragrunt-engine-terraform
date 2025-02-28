@@ -1,4 +1,4 @@
-package test
+package integration_test
 
 import (
 	"context"
@@ -65,6 +65,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 }
 
 func runTerraformCommand(t *testing.T, ctx context.Context, command string, args []string, workingDir string, envVars map[string]string) (string, string, error) {
+	t.Helper()
 	// nolint:staticcheck
 	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
 	if err != nil {
@@ -95,15 +96,15 @@ func runTerraformCommand(t *testing.T, ctx context.Context, command string, args
 			break
 		}
 
-		stdout.WriteString(resp.Stdout)
-		stderr.WriteString(resp.Stderr)
+		stdout.WriteString(resp.GetStdout())
+		stderr.WriteString(resp.GetStderr())
 
-		_, err = fmt.Fprint(os.Stdout, resp.Stdout)
+		_, err = fmt.Fprint(os.Stdout, resp.GetStdout())
 		if err != nil {
 			return "", "", err
 		}
 
-		_, err = fmt.Fprint(os.Stderr, resp.Stderr)
+		_, err = fmt.Fprint(os.Stderr, resp.GetStderr())
 		if err != nil {
 			return "", "", err
 		}
