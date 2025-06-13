@@ -13,7 +13,7 @@ clean:
 
 lint: SHELL:=/bin/bash
 lint:
-	golangci-lint run -c <(curl -s https://raw.githubusercontent.com/gruntwork-io/terragrunt/main/.golangci.yml) ./...
+	golangci-lint run -v ./...
 
 update-local-lint: SHELL:=/bin/bash
 update-local-lint:
@@ -25,7 +25,7 @@ test:
 	go test -v ./...
 
 tools:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.6
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.6
 
 fmt:
 	@echo "Running source files through gofmt..."
