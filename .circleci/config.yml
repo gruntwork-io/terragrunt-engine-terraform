@@ -78,8 +78,12 @@ jobs:
             eval "$(mise activate bash)"
             export PATH="$HOME/.local/share/mise/shims:$PATH"
             echo "path: $PATH"
-            mise install golangci-lint@2.1.6
             mise install
+            mise current
+            mise list
+            mise global --remove golangci-lint
+            mise install golangci-lint@2.1.6
+            mise current
             mise list
             which golangci-lint
             golangci-lint --version 
