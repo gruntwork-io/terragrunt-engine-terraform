@@ -71,6 +71,7 @@ jobs:
       - run:
           name: Run lint
           command: |
+            export PATH="$HOME/.local/bin:$PATH"
             make lint
       - run:
           command: |
