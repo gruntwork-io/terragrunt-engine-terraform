@@ -71,7 +71,7 @@ jobs:
       - run:
           name: Run lint
           command: |
-            eval "$(~/.local/share/mise/bin/mise activate bash)"
+            eval "$(mise activate bash)"
             echo $PATH
             which golangci-lint
             make lint
