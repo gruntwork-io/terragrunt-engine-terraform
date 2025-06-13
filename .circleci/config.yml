@@ -77,6 +77,7 @@ jobs:
             export PATH="$HOME/.local/share/mise/shims:$PATH"
             echo "path: $PATH"
             mise install
+            mise list
             which golangci-lint
             golangci-lint --version 
             make lint
