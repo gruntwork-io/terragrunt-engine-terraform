@@ -71,7 +71,9 @@ jobs:
       - run:
           name: Run lint
           command: |
-            export PATH="$HOME/.local/bin:$PATH"
+            eval "$(~/.local/share/mise/bin/mise activate bash)"
+            echo $PATH
+            which golangci-lint
             make lint
       - run:
           command: |
