@@ -34,7 +34,7 @@ func init() {
 
 func TestRun(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	stdout, stderr, err := runTerraformCommand(t, ctx, "terraform", []string{"init"}, "fixture-basic-project", map[string]string{})
 	require.NoError(t, err)
@@ -46,7 +46,7 @@ func TestRun(t *testing.T) {
 
 func TestVarPassing(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	_, _, err := runTerraformCommand(t, ctx, "terraform", []string{"init"}, "fixture-variables", map[string]string{})
 	require.NoError(t, err)
