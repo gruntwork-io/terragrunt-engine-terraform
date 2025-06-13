@@ -72,6 +72,8 @@ jobs:
           name: Run lint
           command: |
             set +x
+            ls -lahrt
+            cat mise.toml
             mise --version
             eval "$(mise activate bash)"
             export PATH="$HOME/.local/share/mise/shims:$PATH"
