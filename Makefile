@@ -24,7 +24,9 @@ update-local-lint:
 test:
 	go test -v ./...
 
+tools: SHELL:=/bin/bash
 tools:
+	mise plugin add golangci-lint https://github.com/jdx/mise-plugin-golangci-lint
 	mise install
 
 fmt:
