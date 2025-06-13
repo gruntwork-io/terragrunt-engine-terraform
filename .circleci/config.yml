@@ -63,6 +63,7 @@ jobs:
       - run:
           name: Install tools
           command: |
+            rm -rf ~/.config/mise/config.toml
             make tools
       - run:
           name: Tidy check
