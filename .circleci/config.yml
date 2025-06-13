@@ -63,8 +63,6 @@ jobs:
       - run:
           name: Install tools
           command: |
-            echo 'eval "$(mise activate bash)"' >> "$BASH_ENV"
-            echo 'export PATH="$HOME/.local/share/mise/shims:$PATH"' >> "$BASH_ENV"
             make tools
       - run:
           name: Tidy check
@@ -73,9 +71,11 @@ jobs:
       - run:
           name: Run lint
           command: |
-            source $BASH_ENV
+            eval "$(mise activate bash)"
+            echo "path: $PATH"
+            mise install
             which golangci-lint
-            golangci-lint --version
+            golangci-lint --version 
             make lint
       - run:
           command: |
