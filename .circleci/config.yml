@@ -72,7 +72,9 @@ jobs:
           name: Run lint
           command: |
             set +x
+            mise --version
             eval "$(mise activate bash)"
+            export PATH="$HOME/.local/share/mise/shims:$PATH"
             echo "path: $PATH"
             mise install
             which golangci-lint
