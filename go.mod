@@ -1,6 +1,6 @@
 module github.com/gruntwork-io/terragrunt-engine-terraform
 
-go 1.23
+go 1.24
 
 require (
 	github.com/creack/pty v1.1.24

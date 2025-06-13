@@ -1,3 +1,4 @@
+// Package engine implements a Terraform engine to be used with Terragrunt.
 package engine
 
 import (
