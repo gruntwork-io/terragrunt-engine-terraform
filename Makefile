@@ -25,8 +25,7 @@ test:
 	go test -v ./...
 
 tools:
-	mise plugin add golangci-lint
-	mise install
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.1.6
 
 fmt:
 	@echo "Running source files through gofmt..."

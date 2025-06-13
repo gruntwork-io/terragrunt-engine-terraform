@@ -63,7 +63,6 @@ jobs:
       - run:
           name: Install tools
           command: |
-            rm -rf ~/.config/mise/config.toml
             make tools
       - run:
           name: Tidy check
@@ -72,22 +71,6 @@ jobs:
       - run:
           name: Run lint
           command: |
-            set +x
-            ls -lahrt
-            cat mise.toml
-            mise --version
-            eval "$(mise activate bash)"
-            export PATH="$HOME/.local/share/mise/shims:$PATH"
-            echo "path: $PATH"
-            mise install
-            mise current
-            mise list
-            mise global --remove golangci-lint
-            mise install golangci-lint@2.1.6
-            mise current
-            mise list
-            which golangci-lint
-            golangci-lint --version 
             make lint
       - run:
           command: |
