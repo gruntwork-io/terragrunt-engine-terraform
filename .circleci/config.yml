@@ -71,6 +71,7 @@ jobs:
       - run:
           name: Run lint
           command: |
+            set +x
             eval "$(mise activate bash)"
             echo "path: $PATH"
             mise install
