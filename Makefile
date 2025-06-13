@@ -12,7 +12,7 @@ clean:
 	rm -f engine
 
 lint: SHELL:=/bin/bash
-lint:
+lint: update-local-lint
 	golangci-lint run -v ./...
 
 update-local-lint: SHELL:=/bin/bash
