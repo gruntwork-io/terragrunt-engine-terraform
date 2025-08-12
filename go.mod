@@ -5,10 +5,10 @@ go 1.24
 require (
 	github.com/creack/pty v1.1.24
 	github.com/gruntwork-io/terragrunt-engine-go v0.0.15
-	github.com/hashicorp/go-plugin v1.6.3
+	github.com/hashicorp/go-plugin v1.7.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/text v0.27.0
+	golang.org/x/text v0.28.0
 	google.golang.org/grpc v1.74.2
 )
 
