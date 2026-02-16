@@ -43,7 +43,8 @@ func (c *TerraformEngine) Init(req *tgengine.InitRequest, stream tgengine.Engine
 
 func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_RunServer) error {
 	log.Infof("Run Terraform engine %v", req.GetWorkingDir())
-	cmd := exec.Command(iacCommand, req.GetArgs()...)
+
+	cmd := exec.CommandContext(stream.Context(), iacCommand, req.GetArgs()...)
 	cmd.Dir = req.GetWorkingDir()
 
 	env := make([]string, 0, len(req.GetEnvVars()))
@@ -152,6 +153,7 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 			}
 		}
 	}()
+
 	wg.Wait()
 
 	resultCode := 0

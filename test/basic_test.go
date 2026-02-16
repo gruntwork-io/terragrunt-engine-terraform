@@ -25,6 +25,7 @@ func init() {
 	lis = bufconn.Listen(bufSize)
 	server := grpc.NewServer()
 	tgengine.RegisterEngineServer(server, &engine.TerraformEngine{})
+
 	go func() {
 		if err := server.Serve(lis); err != nil {
 			panic(err)
@@ -71,12 +72,14 @@ func runTerraformCommand(t *testing.T, ctx context.Context, command string, args
 	if err != nil {
 		return "", "", err
 	}
+
 	defer func() {
 		err := conn.Close()
 		require.NoError(t, err)
 	}()
 
 	client := tgengine.NewEngineClient(conn)
+
 	stream, err := client.Run(ctx, &tgengine.RunRequest{
 		Command:    command,
 		Args:       args,
@@ -88,6 +91,7 @@ func runTerraformCommand(t *testing.T, ctx context.Context, command string, args
 	}
 
 	var stdout strings.Builder
+
 	var stderr strings.Builder
 
 	for {
