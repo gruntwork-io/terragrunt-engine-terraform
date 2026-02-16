@@ -128,7 +128,10 @@ func TestTerraformEngine_Init(t *testing.T) {
 	err := engine.Init(&tgengine.InitRequest{}, mockStream)
 	require.NoError(t, err)
 	assert.NotEmpty(t, mockStream.Responses)
-	assert.Equal(t, "Terraform Initialization completed\n", mockStream.Responses[0].GetStdout())
+
+	logMsg := mockStream.Responses[0].GetLog()
+	require.NotNil(t, logMsg)
+	assert.Equal(t, "Terraform Initialization completed", logMsg.GetContent())
 }
 
 func TestTerraformEngine_Run(t *testing.T) {
@@ -151,8 +154,8 @@ func TestTerraformEngine_Run(t *testing.T) {
 	var outputBuilder strings.Builder
 
 	for _, response := range mockStream.Responses {
-		if response.GetStdout() != "" {
-			outputBuilder.WriteString(response.GetStdout())
+		if stdoutMsg := response.GetStdout(); stdoutMsg != nil {
+			outputBuilder.WriteString(stdoutMsg.GetContent())
 		}
 	}
 
@@ -177,17 +180,20 @@ func TestTerraformEngineError(t *testing.T) {
 	// merge stderr from all responses to a string
 	var outputBuilder strings.Builder
 
+	var exitCode int32
+
 	for _, response := range mockStream.Responses {
-		if response.GetStderr() != "" {
-			outputBuilder.WriteString(response.GetStderr())
+		if stderrMsg := response.GetStderr(); stderrMsg != nil {
+			outputBuilder.WriteString(stderrMsg.GetContent())
+		}
+
+		if exitResult := response.GetExitResult(); exitResult != nil {
+			exitCode = exitResult.GetCode()
 		}
 	}
 
-	// get status code from last response
-	code := mockStream.Responses[len(mockStream.Responses)-1].GetResultCode()
-
 	assert.Contains(t, outputBuilder.String(), "Terraform has no command named \"not-a-valid-command\"")
-	assert.NotEqual(t, 0, code)
+	assert.NotEqual(t, int32(0), exitCode)
 }
 
 func TestTerraformEngine_Shutdown(t *testing.T) {
@@ -198,8 +204,11 @@ func TestTerraformEngine_Shutdown(t *testing.T) {
 
 	err := engine.Shutdown(&tgengine.ShutdownRequest{}, mockStream)
 	require.NoError(t, err)
-	assert.Len(t, mockStream.Responses, 1)
-	assert.Equal(t, "Terraform Shutdown completed\n", mockStream.Responses[0].GetStdout())
+	assert.Len(t, mockStream.Responses, 2)
+
+	logMsg := mockStream.Responses[0].GetLog()
+	require.NotNil(t, logMsg)
+	assert.Equal(t, "Terraform Shutdown completed", logMsg.GetContent())
 }
 
 func TestHelperProcess(*testing.T) {
