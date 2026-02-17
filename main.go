@@ -24,6 +24,7 @@ func main() {
 	parsedLevel, err := logrus.ParseLevel(engineLogLevel)
 	if err != nil {
 		logrus.Warnf("Error parsing log level: %v", err)
+
 		parsedLevel = logrus.InfoLevel
 	}
 

@@ -33,8 +33,22 @@ type TerraformEngine struct {
 func (c *TerraformEngine) Init(req *tgengine.InitRequest, stream tgengine.Engine_InitServer) error {
 	log.Info("Init Terraform engine")
 
-	err := stream.Send(&tgengine.InitResponse{Stdout: "Terraform Initialization completed\n", Stderr: "", ResultCode: 0})
-	if err != nil {
+	if err := stream.Send(&tgengine.InitResponse{
+		Response: &tgengine.InitResponse_Log{
+			Log: &tgengine.LogMessage{
+				Content: "Terraform Initialization completed",
+				Level:   tgengine.LogLevel_LOG_LEVEL_DEBUG,
+			},
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := stream.Send(&tgengine.InitResponse{
+		Response: &tgengine.InitResponse_ExitResult{
+			ExitResult: &tgengine.ExitResultMessage{Code: 0},
+		},
+	}); err != nil {
 		return err
 	}
 
@@ -43,7 +57,8 @@ func (c *TerraformEngine) Init(req *tgengine.InitRequest, stream tgengine.Engine
 
 func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_RunServer) error {
 	log.Infof("Run Terraform engine %v", req.GetWorkingDir())
-	cmd := exec.Command(iacCommand, req.GetArgs()...)
+
+	cmd := exec.CommandContext(stream.Context(), iacCommand, req.GetArgs()...)
 	cmd.Dir = req.GetWorkingDir()
 
 	env := make([]string, 0, len(req.GetEnvVars()))
@@ -118,8 +133,11 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 			}
 
 			// Stream the read character back to the client
-			if err = stream.Send(&tgengine.RunResponse{Stdout: string(char)}); err != nil {
-				// If streaming fails, log the error and exit
+			if err = stream.Send(&tgengine.RunResponse{
+				Response: &tgengine.RunResponse_Stdout{
+					Stdout: &tgengine.StdoutMessage{Content: string(char)},
+				},
+			}); err != nil {
 				log.Errorf("Error sending stdout: %v", err)
 				return
 			}
@@ -146,12 +164,17 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 				break
 			}
 
-			if err = stream.Send(&tgengine.RunResponse{Stderr: string(char)}); err != nil {
+			if err = stream.Send(&tgengine.RunResponse{
+				Response: &tgengine.RunResponse_Stderr{
+					Stderr: &tgengine.StderrMessage{Content: string(char)},
+				},
+			}); err != nil {
 				log.Errorf("Error sending stderr: %v", err)
 				return
 			}
 		}
 	}()
+
 	wg.Wait()
 
 	resultCode := 0
@@ -165,7 +188,11 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 		}
 	}
 
-	if err := stream.Send(&tgengine.RunResponse{ResultCode: int32(resultCode)}); err != nil {
+	if err := stream.Send(&tgengine.RunResponse{
+		Response: &tgengine.RunResponse_ExitResult{
+			ExitResult: &tgengine.ExitResultMessage{Code: int32(resultCode)},
+		},
+	}); err != nil {
 		return err
 	}
 
@@ -173,16 +200,45 @@ func (c *TerraformEngine) Run(req *tgengine.RunRequest, stream tgengine.Engine_R
 }
 
 func sendError(stream tgengine.Engine_RunServer, err error) {
-	if err = stream.Send(&tgengine.RunResponse{Stderr: fmt.Sprintf("%v", err), ResultCode: errorResultCode}); err != nil {
-		log.Warnf("Error sending response: %v", err)
+	if sendErr := stream.Send(&tgengine.RunResponse{
+		Response: &tgengine.RunResponse_Log{
+			Log: &tgengine.LogMessage{
+				Content: fmt.Sprintf("%v", err),
+				Level:   tgengine.LogLevel_LOG_LEVEL_ERROR,
+			},
+		},
+	}); sendErr != nil {
+		log.Warnf("Error sending stderr response: %v", sendErr)
+	}
+
+	if sendErr := stream.Send(&tgengine.RunResponse{
+		Response: &tgengine.RunResponse_ExitResult{
+			ExitResult: &tgengine.ExitResultMessage{Code: errorResultCode},
+		},
+	}); sendErr != nil {
+		log.Warnf("Error sending exit result response: %v", sendErr)
 	}
 }
 
 func (c *TerraformEngine) Shutdown(req *tgengine.ShutdownRequest, stream tgengine.Engine_ShutdownServer) error {
 	log.Info("Shutdown Terraform engine")
 
-	err := stream.Send(&tgengine.ShutdownResponse{Stdout: "Terraform Shutdown completed\n", Stderr: "", ResultCode: 0})
-	if err != nil {
+	if err := stream.Send(&tgengine.ShutdownResponse{
+		Response: &tgengine.ShutdownResponse_Log{
+			Log: &tgengine.LogMessage{
+				Content: "Terraform Shutdown completed",
+				Level:   tgengine.LogLevel_LOG_LEVEL_DEBUG,
+			},
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err := stream.Send(&tgengine.ShutdownResponse{
+		Response: &tgengine.ShutdownResponse_ExitResult{
+			ExitResult: &tgengine.ExitResultMessage{Code: 0},
+		},
+	}); err != nil {
 		return err
 	}
 
@@ -196,6 +252,6 @@ func (c *TerraformEngine) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) 
 }
 
 // GRPCClient is used to create a client that connects to the Terraform Engine
-func (c *TerraformEngine) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (interface{}, error) {
+func (c *TerraformEngine) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
 	return tgengine.NewEngineClient(client), nil
 }

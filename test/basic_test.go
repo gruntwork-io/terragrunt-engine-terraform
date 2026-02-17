@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -25,6 +26,7 @@ func init() {
 	lis = bufconn.Listen(bufSize)
 	server := grpc.NewServer()
 	tgengine.RegisterEngineServer(server, &engine.TerraformEngine{})
+
 	go func() {
 		if err := server.Serve(lis); err != nil {
 			panic(err)
@@ -66,17 +68,19 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 
 func runTerraformCommand(t *testing.T, ctx context.Context, command string, args []string, workingDir string, envVars map[string]string) (string, string, error) {
 	t.Helper()
-	// nolint:staticcheck
-	conn, err := grpc.DialContext(ctx, "", grpc.WithContextDialer(bufDialer), grpc.WithInsecure())
+
+	conn, err := grpc.NewClient("passthrough://bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return "", "", err
 	}
+
 	defer func() {
 		err := conn.Close()
 		require.NoError(t, err)
 	}()
 
 	client := tgengine.NewEngineClient(conn)
+
 	stream, err := client.Run(ctx, &tgengine.RunRequest{
 		Command:    command,
 		Args:       args,
@@ -88,6 +92,7 @@ func runTerraformCommand(t *testing.T, ctx context.Context, command string, args
 	}
 
 	var stdout strings.Builder
+
 	var stderr strings.Builder
 
 	for {
@@ -96,17 +101,22 @@ func runTerraformCommand(t *testing.T, ctx context.Context, command string, args
 			break
 		}
 
-		stdout.WriteString(resp.GetStdout())
-		stderr.WriteString(resp.GetStderr())
+		if stdoutMsg := resp.GetStdout(); stdoutMsg != nil {
+			stdout.WriteString(stdoutMsg.GetContent())
 
-		_, err = fmt.Fprint(os.Stdout, resp.GetStdout())
-		if err != nil {
-			return "", "", err
+			_, err = fmt.Fprint(os.Stdout, stdoutMsg.GetContent())
+			if err != nil {
+				return "", "", err
+			}
 		}
 
-		_, err = fmt.Fprint(os.Stderr, resp.GetStderr())
-		if err != nil {
-			return "", "", err
+		if stderrMsg := resp.GetStderr(); stderrMsg != nil {
+			stderr.WriteString(stderrMsg.GetContent())
+
+			_, err = fmt.Fprint(os.Stderr, stderrMsg.GetContent())
+			if err != nil {
+				return "", "", err
+			}
 		}
 	}
 

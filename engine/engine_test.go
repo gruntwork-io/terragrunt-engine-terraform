@@ -2,14 +2,14 @@ package engine_test
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/gruntwork-io/terragrunt-engine-terraform/engine"
 
 	"github.com/stretchr/testify/require"
-
-	"os"
-	"os/exec"
 
 	tgengine "github.com/gruntwork-io/terragrunt-engine-go/proto"
 	"github.com/stretchr/testify/assert"
@@ -121,17 +121,22 @@ func (m *MockShutdownServer) RecvMsg(msg interface{}) error {
 
 func TestTerraformEngine_Init(t *testing.T) {
 	t.Parallel()
+
 	engine := &engine.TerraformEngine{}
 	mockStream := &MockInitServer{}
 
 	err := engine.Init(&tgengine.InitRequest{}, mockStream)
 	require.NoError(t, err)
 	assert.NotEmpty(t, mockStream.Responses)
-	assert.Equal(t, "Terraform Initialization completed\n", mockStream.Responses[0].GetStdout())
+
+	logMsg := mockStream.Responses[0].GetLog()
+	require.NotNil(t, logMsg)
+	assert.Equal(t, "Terraform Initialization completed", logMsg.GetContent())
 }
 
 func TestTerraformEngine_Run(t *testing.T) {
 	t.Parallel()
+
 	engine := &engine.TerraformEngine{}
 	mockStream := &MockRunServer{}
 
@@ -146,17 +151,20 @@ func TestTerraformEngine_Run(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, mockStream.Responses)
 	// merge stdout from all responses to a string
-	var output string
+	var outputBuilder strings.Builder
+
 	for _, response := range mockStream.Responses {
-		if response.GetStdout() != "" {
-			output += response.GetStdout()
+		if stdoutMsg := response.GetStdout(); stdoutMsg != nil {
+			outputBuilder.WriteString(stdoutMsg.GetContent())
 		}
 	}
-	assert.Contains(t, output, "Usage: terraform [global options] <subcommand> [args]")
+
+	assert.Contains(t, outputBuilder.String(), "Usage: terraform [global options] <subcommand> [args]")
 }
 
 func TestTerraformEngineError(t *testing.T) {
 	t.Parallel()
+
 	engine := &engine.TerraformEngine{}
 	mockStream := &MockRunServer{}
 
@@ -169,36 +177,46 @@ func TestTerraformEngineError(t *testing.T) {
 	err := engine.Run(req, mockStream)
 	require.NoError(t, err)
 	assert.NotEmpty(t, mockStream.Responses)
-	// merge stdout from all responses to a string
-	var output string
+	// merge stderr from all responses to a string
+	var outputBuilder strings.Builder
+
+	var exitCode int32
 
 	for _, response := range mockStream.Responses {
-		if response.GetStderr() != "" {
-			output += response.GetStderr()
+		if stderrMsg := response.GetStderr(); stderrMsg != nil {
+			outputBuilder.WriteString(stderrMsg.GetContent())
+		}
+
+		if exitResult := response.GetExitResult(); exitResult != nil {
+			exitCode = exitResult.GetCode()
 		}
 	}
-	// get status code from last response
-	code := mockStream.Responses[len(mockStream.Responses)-1].GetResultCode()
-	assert.Contains(t, output, "Terraform has no command named \"not-a-valid-command\"")
-	assert.NotEqual(t, 0, code)
+
+	assert.Contains(t, outputBuilder.String(), "Terraform has no command named \"not-a-valid-command\"")
+	assert.NotEqual(t, int32(0), exitCode)
 }
 
 func TestTerraformEngine_Shutdown(t *testing.T) {
 	t.Parallel()
+
 	engine := &engine.TerraformEngine{}
 	mockStream := &MockShutdownServer{}
 
 	err := engine.Shutdown(&tgengine.ShutdownRequest{}, mockStream)
 	require.NoError(t, err)
-	assert.Len(t, mockStream.Responses, 1)
-	assert.Equal(t, "Terraform Shutdown completed\n", mockStream.Responses[0].GetStdout())
+	assert.Len(t, mockStream.Responses, 2)
+
+	logMsg := mockStream.Responses[0].GetLog()
+	require.NotNil(t, logMsg)
+	assert.Equal(t, "Terraform Shutdown completed", logMsg.GetContent())
 }
 
 func TestHelperProcess(*testing.T) {
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}
-	cmd := exec.Command(os.Args[3], os.Args[4:]...)
+
+	cmd := exec.CommandContext(context.Background(), os.Args[3], os.Args[4:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	_ = cmd.Run()
