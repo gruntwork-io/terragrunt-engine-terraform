@@ -10,8 +10,8 @@ require (
 	github.com/hashicorp/go-plugin v1.7.0
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/text v0.34.0
-	google.golang.org/grpc v1.79.1
+	golang.org/x/text v0.35.0
+	google.golang.org/grpc v1.79.2
 )
 
 require (
