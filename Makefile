@@ -1,4 +1,3 @@
-
 GOFMT_FILES?=$$(find . -name '*.go')
 
 default: build
@@ -11,21 +10,16 @@ build: $(shell find . \( -type f -name '*.go' -print \))
 clean:
 	rm -f engine
 
-lint: SHELL:=/bin/bash
-lint: update-local-lint
-	golangci-lint run -v ./...
-
-update-local-lint: SHELL:=/bin/bash
-update-local-lint:
-	curl -s https://raw.githubusercontent.com/gruntwork-io/terragrunt/main/.golangci.yml --output .golangci.yml
-	tmpfile=$$(mktemp) ;\
-	echo '# This file is generated using `make update-local-lint` to track the linting used in Terragrunt. Do not edit manually.' | cat - .golangci.yml > $${tmpfile} && mv $${tmpfile} .golangci.yml
+lint:
+	golangci-lint run ./...
+	shellcheck .github/scripts/*.sh .github/scripts/tests/helpers/*.sh
+	shfmt -d .github/scripts
 
 test:
 	go test -v ./...
 
-tools:
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.9.0
+test-scripts:
+	bats .github/scripts/tests
 
 fmt:
 	@echo "Running source files through gofmt..."
@@ -34,4 +28,7 @@ fmt:
 pre-commit:
 	pre-commit run --all-files
 
-.PHONY: tools pre-commit lint protoc test default
+tools:
+	mise install
+
+.PHONY: tools pre-commit lint protoc test test-scripts default
